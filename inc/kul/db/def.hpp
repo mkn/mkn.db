@@ -32,19 +32,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define   _KUL_DB_DEF_HPP_
 
 #ifndef   _KUL_DB_ID_COL_
-#define   _KUL_DB_ID_COL_ "id"  // seconds
+#define   _KUL_DB_ID_COL_ "id"
 #endif /* _KUL_DB_ID_COL_ */
 
 #ifndef   _KUL_DB_ID_TYPE_
-#define   _KUL_DB_ID_TYPE_ uint32_t  // seconds
+#define   _KUL_DB_ID_TYPE_ uint32_t
 #endif /* _KUL_DB_ID_TYPE_ */
 
 #ifndef   _KUL_DB_CREATED_COL_
-#define   _KUL_DB_CREATED_COL_ "created"  // seconds
+#define   _KUL_DB_CREATED_COL_ "created"
 #endif /* _KUL_DB_CREATED_COL_ */
 
 #ifndef   _KUL_DB_UPDATED_COL_
-#define   _KUL_DB_UPDATED_COL_ "updated"  // seconds
+#define   _KUL_DB_UPDATED_COL_ "updated"
 #endif /* _KUL_DB_UPDATED_COL_ */
 
 
