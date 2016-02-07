@@ -1,0 +1,30 @@
+
+
+name: mkn.db
+
+parent: build
+
+profile:
+  - name: build
+    inc: ./inc
+    dep:
+      - name: mkn.kul
+        version: master
+
+  - name: postgres
+    parent: build
+    dep:
+      - name: db.sql.pqxx
+        version: master
+
+  # - name: mysql
+  #   parent: build
+  #   dep:
+  #     - name: db.sql.mysql
+  #       version: master
+
+  - name: test
+    parent: build
+    mode: none
+    self: postgres #mysql
+    main: test.cpp

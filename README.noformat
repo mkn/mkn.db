@@ -1,0 +1,17 @@
+mkn.db
+===
+
+C++ Generic database wrapper
+
+Supported:
+	postgres
+
+Planned:
+	mysql - when it doesn't need boost
+
+How to use:
+view tst/kul.db.test.hpp
+
+License
+
+BSD
