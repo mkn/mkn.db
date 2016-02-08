@@ -63,7 +63,7 @@ class PostgresORM : public kul::ORM{
 	private:
 		Postgres& pdb;
 	protected:
-	    virtual void get(const std::string& s, std::vector<kul::hash::map::S2S>& vals){
+	    virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals){
 			pqxx::result r(pdb.query(s));
 			for(pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c){
 				kul::hash::map::S2S map;

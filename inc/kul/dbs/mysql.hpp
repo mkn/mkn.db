@@ -54,7 +54,7 @@ class MySQLORM : public kul::ORM{
 	private:
 		MySQL& mdb;
 	protected:
-	    virtual void get(const std::string& s, std::vector<kul::hash::map::S2S>& vals){
+	    virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals){
 
 	    }
 	public:

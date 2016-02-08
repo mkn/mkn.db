@@ -54,6 +54,7 @@ class DB{
         const std::string n;
         DB(const std::string& n) : n(n){}
         DB(){}
+        friend class kul::ORM;
     public:
         virtual void exec(const std::string& s) throw(db::Exception) = 0;
 };
@@ -95,7 +96,7 @@ class AObject{
             return field(s);
         }
         template<class R> 
-        const R get(const std::string& s) const{
+        R get(const std::string& s) const{
             return this->template field<R>(s);
         }
         friend class kul::ORM;
@@ -106,13 +107,13 @@ template <class T> std::ostream& operator<<(std::ostream &s, const kul::orm::AOb
 class ORM{
     protected:
         DB& db;
-        virtual void get(const std::string& s, std::vector<kul::hash::map::S2S>& vals) = 0;
+        virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals) = 0;
         template <class T> 
-        const std::string table(){
+        std::string table(){
             return db.n.size() ? (db.n+"."+T::TABLE()) : T::TABLE();
         }
         template <class T> 
-        void update(const orm::AObject<T>& o){
+        void update(orm::AObject<T>& o){
             if(o.di.size() == 0) return;
             std::stringstream ss;
             ss << "UPDATE " << table<T>() << " SET ";
@@ -124,7 +125,7 @@ class ORM{
             o.di.clear();
         }
         template <class T> 
-        void insert(const orm::AObject<T>& o){
+        void insert(orm::AObject<T>& o){
             std::stringstream ss;
             ss << "INSERT INTO " << table<T>() << "(";
             for(const auto& p : o.fs) ss << p.first << ", ";
@@ -138,7 +139,7 @@ class ORM{
     public:
         ORM(DB& db) : db(db){}
         template <class T> 
-        void commit(const orm::AObject<T>& o){
+        void commit(orm::AObject<T>& o){
             if(o.n) insert(o);
             else    update(o);
         }
@@ -149,7 +150,7 @@ class ORM{
             db.exec(ss.str());
         }
         template <class T> 
-        const void get(std::vector<T>& ts, const uint& l = 100, const uint& o = 0, const std::string& w = "", const std::string& g = ""){
+        void get(std::vector<T>& ts, const uint16_t& l = 100, const uint16_t& o = 0, const std::string& w = "", const std::string& g = ""){
             std::stringstream ss;
             ss << "SELECT * FROM " << table<T>() << " t ";
             if(!w.empty()) ss << " WHERE " << w;
@@ -157,23 +158,27 @@ class ORM{
             if(!g.empty()) ss << " GROUP BY " << g;
             for(auto& t : ts) t.n = 0;
             std::vector<kul::hash::map::S2S> vals;
-            get(ss.str(), vals);
+            populate(ss.str(), vals);
             for(const auto& v : vals){
                 T t;
                 for(const auto& m : v) t.fs.insert(m.first, m.second);
                 ts.push_back(t);
             }
-            return ts;
+        }
+        template <class T, class V = std::string> 
+        T by(const std::string& c, const V& v) throw(db::Exception) {
+            std::vector<T> ts;
+            std::stringstream ss, id;
+            id << v;
+            ss << "t." << c << " = '" << v << "'";
+            get(ts, 2, 0, ss.str());
+            if(ts.size() == 0) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+ id.str() +" does not exist");
+            if(ts.size() >  1) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+ id.str() +" is a duplicate");
+            return ts[0];
         }
         template <class T> 
-        const T id(const _KUL_DB_ID_TYPE_& id) throw(db::Exception) {
-            std::vector<T> ts;
-            std::stringstream ss;
-            ss << "t." << _KUL_DB_ID_COL_ << " = '" << id << "'";
-            get(ts, 2, 0, ss.str());
-            if(ts.size() == 0) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+id+" does not exist");
-            if(ts.size() >  1) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+id+" is a duplicate");
-            return ts[0];
+        T id(const _KUL_DB_ID_TYPE_& id) throw(db::Exception) {
+            return by<T, _KUL_DB_ID_TYPE_>(_KUL_DB_ID_COL_, id);
         }
 };
 
