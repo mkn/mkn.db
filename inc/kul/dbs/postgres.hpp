@@ -51,8 +51,8 @@ class Postgres : public kul::DB{
 		}
 	public:
 		~Postgres(){ c.disconnect(); }
-		Postgres(const std::string& h, const std::string& d, const std::string& u, const std::string& p)
-			: kul::DB(d), c("host="+h+ " dbname="+d+" user="+u+" password="+p){}
+		Postgres(const std::string& h, const std::string& d, const std::string& s, const std::string& u, const std::string& p)
+			: kul::DB(s), c("host="+h+ " dbname="+d+" user="+u+" password="+p){}
 		pqxx::result query(const std::string& sql){
 			kul::ScopeLock l(m);
 			return pqxx::nontransaction(c).exec(sql);
@@ -67,7 +67,8 @@ class PostgresORM : public kul::ORM{
 			pqxx::result r(pdb.query(s));
 			for(pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c){
 				kul::hash::map::S2S map;
-				for(uint16_t i = 0; i < c.size(); i++) map.insert(c[i].name(), c[i].as<std::string>());
+				for(uint16_t i = 0; i < c.size(); i++) 
+					map.insert(c[i].name(), c[i].is_null() ? "" : c[i].as<std::string>());
 				vals.push_back(map);
 			}
 	    }

@@ -70,7 +70,6 @@ class AObject{
         template <class R> friend std::ostream& operator<<(std::ostream&, const AObject<R>&);
     protected:
         const std::string& field(const std::string& s) const{
-            if(!fs.count(_KUL_DB_ID_COL_))  KEXCEPTION("Object is not populated");
             if(!fs.count(s))                KEXCEPTION("ORM error, no field: " + s);
             return (*fs.find(s)).second;
         }
