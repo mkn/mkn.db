@@ -52,8 +52,7 @@ class ORM;
 class DB{
     protected:
         const std::string n;
-        DB(const std::string& n) : n(n){}
-        DB(){}
+        DB(const std::string& n = "") : n(n){}
         friend class kul::ORM;
     public:
         virtual void exec(const std::string& s) throw(db::Exception) = 0;
@@ -114,24 +113,29 @@ class ORM{
         template <class T> 
         void update(orm::AObject<T>& o){
             if(o.di.size() == 0) return;
+            std::time_t now = std::time(0);
             std::stringstream ss;
             ss << "UPDATE " << table<T>() << " SET ";
             for(const auto& d : o.di)
                 ss << d << "='" << o.fs[d] << "',";
-            ss << " updated = NOW()";
+            ss << " updated = " << now;
             ss << " WHERE id = '" << o.fs[_KUL_DB_ID_COL_] << "'";
             db.exec(ss.str());
+            o.set(_KUL_DB_UPDATED_COL_, now);
             o.di.clear();
         }
         template <class T> 
         void insert(orm::AObject<T>& o){
+            std::time_t now = std::time(0);
             std::stringstream ss;
             ss << "INSERT INTO " << table<T>() << "(";
             for(const auto& p : o.fs) ss << p.first << ", ";
-            ss << " created, updated) VALUES(";
+            ss << _KUL_DB_CREATED_COL_ << " ," << _KUL_DB_UPDATED_COL_ << ") VALUES(";
             for(const auto& p : o.fs) ss << "'" << p.second << "', ";
-            ss << " NOW(), NOW()) RETURNING id";
+            ss << now << ", " << now << ") RETURNING id";
             db.exec(ss.str());
+            o.set(_KUL_DB_CREATED_COL_, now);
+            o.set(_KUL_DB_UPDATED_COL_, now);
             o.n = 0;
             o.di.clear();
         }
@@ -149,7 +153,7 @@ class ORM{
             db.exec(ss.str());
         }
         template <class T> 
-        void get(std::vector<T>& ts, const uint16_t& l = 100, const uint16_t& o = 0, const std::string& w = "", const std::string& g = ""){
+        void get(std::vector<T>& ts, const std::string& w = "", const uint16_t& l = 100, const uint16_t& o = 0, const std::string& g = ""){
             std::stringstream ss;
             ss << "SELECT * FROM " << table<T>() << " t ";
             if(!w.empty()) ss << " WHERE " << w;
@@ -170,7 +174,7 @@ class ORM{
             std::stringstream ss, id;
             id << v;
             ss << "t." << c << " = '" << v << "'";
-            get(ts, 2, 0, ss.str());
+            get(ts, ss.str(), 2, 0);
             if(ts.size() == 0) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+ id.str() +" does not exist");
             if(ts.size() >  1) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+ id.str() +" is a duplicate");
             return ts[0];
