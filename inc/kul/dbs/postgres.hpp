@@ -43,6 +43,13 @@ class Postgres : public kul::DB{
 	private:
 		kul::Mutex m;
 		pqxx::connection c;
+		std::string exec_return(const std::string& sql) throw(db::Exception){
+			kul::ScopeLock l(m);
+			pqxx::work w(c);
+			pqxx::result r = w.exec(sql);
+			w.commit();
+			return r[0][0].as<std::string>();
+		}
 		void exec(const std::string& sql) throw(db::Exception){
 			kul::ScopeLock l(m);
 			pqxx::work w(c);

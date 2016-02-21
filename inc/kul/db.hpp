@@ -55,6 +55,7 @@ class DB{
         DB(const std::string& n = "") : n(n){}
         friend class kul::ORM;
     public:
+        virtual std::string exec_return(const std::string& sql) throw(db::Exception) = 0;
         virtual void exec(const std::string& s) throw(db::Exception) = 0;
 };
 
@@ -132,8 +133,8 @@ class ORM{
             for(const auto& p : o.fs) ss << p.first << ", ";
             ss << _KUL_DB_CREATED_COL_ << " ," << _KUL_DB_UPDATED_COL_ << ") VALUES(";
             for(const auto& p : o.fs) ss << "'" << p.second << "', ";
-            ss << now << ", " << now << ") RETURNING id";
-            db.exec(ss.str());
+            ss << now << ", " << now << ") RETURNING " << _KUL_DB_ID_COL_;
+            o.set(_KUL_DB_ID_COL_     , db.exec_return(ss.str()));
             o.set(_KUL_DB_CREATED_COL_, now);
             o.set(_KUL_DB_UPDATED_COL_, now);
             o.n = 0;
@@ -149,7 +150,13 @@ class ORM{
         template <class T> 
         void remove(const orm::AObject<T>& o){
             std::stringstream ss;
-            ss << "DELETE FROM " << table<T>() << " t WHERE t.id = '" << o[_KUL_DB_ID_COL_] << "'";
+            ss << "DELETE FROM " << table<T>() << " t WHERE t." << _KUL_DB_ID_COL_ << " = '" << o[_KUL_DB_ID_COL_] << "'";
+            db.exec(ss.str());
+        }
+        template <class T> 
+        void remove(const std::string& w){
+            std::stringstream ss;
+            ss << "DELETE FROM " << table<T>() << " t WHERE t." << w;
             db.exec(ss.str());
         }
         template <class T> 
