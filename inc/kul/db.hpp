@@ -64,7 +64,7 @@ namespace orm{
 template <class T>
 class AObject{
     private:
-        bool n = 0;
+        bool n = 1;
         kul::hash::set::String di;
         kul::hash::map::S2S fs;
         template <class R> friend std::ostream& operator<<(std::ostream&, const AObject<R>&);
@@ -87,7 +87,7 @@ class AObject{
         AObject<T>& set(const std::string& s, const V& v){
             std::stringstream ss;
             ss << v;
-            fs[s] = ss.str();
+            fs.insert(s, ss.str());
             di.insert(s);
             return *this;
         }
@@ -128,15 +128,16 @@ class ORM{
         template <class T> 
         void insert(orm::AObject<T>& o){
             std::time_t now = std::time(0);
+            std::string nsw = std::to_string(now);
             std::stringstream ss;
             ss << "INSERT INTO " << table<T>() << "(";
             for(const auto& p : o.fs) ss << p.first << ", ";
             ss << _KUL_DB_CREATED_COL_ << " ," << _KUL_DB_UPDATED_COL_ << ") VALUES(";
             for(const auto& p : o.fs) ss << "'" << p.second << "', ";
             ss << now << ", " << now << ") RETURNING " << _KUL_DB_ID_COL_;
-            o.set(_KUL_DB_ID_COL_     , db.exec_return(ss.str()));
-            o.set(_KUL_DB_CREATED_COL_, now);
-            o.set(_KUL_DB_UPDATED_COL_, now);
+            o.fs.insert(_KUL_DB_ID_COL_     , db.exec_return(ss.str()));
+            o.fs.insert(_KUL_DB_CREATED_COL_, nsw);
+            o.fs.insert(_KUL_DB_UPDATED_COL_, nsw);
             o.n = 0;
             o.di.clear();
         }
