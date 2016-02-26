@@ -87,7 +87,7 @@ class AObject{
         AObject<T>& set(const std::string& s, const V& v){
             std::stringstream ss;
             ss << v;
-            fs.insert(s, ss.str());
+            fs[s] = ss.str();
             di.insert(s);
             return *this;
         }
