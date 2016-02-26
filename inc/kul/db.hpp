@@ -70,7 +70,7 @@ class AObject{
         template <class R> friend std::ostream& operator<<(std::ostream&, const AObject<R>&);
     protected:
         const std::string& field(const std::string& s) const{
-            if(!fs.count(s))                KEXCEPTION("ORM error, no field: " + s);
+            if(!fs.count(s)) KEXCEPTION("ORM error, no field: " + s);
             return (*fs.find(s)).second;
         }
         template<class R> 
@@ -115,14 +115,13 @@ class ORM{
         void update(orm::AObject<T>& o){
             if(o.di.size() == 0) return;
             std::time_t now = std::time(0);
+            o.set(_KUL_DB_UPDATED_COL_, now);
             std::stringstream ss;
             ss << "UPDATE " << table<T>() << " SET ";
-            for(const auto& d : o.di)
-                ss << d << "='" << o.fs[d] << "',";
+            for(const auto& d : o.di) ss << d << "='" << o.fs[d] << "',";
             ss << " updated = " << now;
-            ss << " WHERE id = '" << o.fs[_KUL_DB_ID_COL_] << "'";
+            ss << " WHERE " << _KUL_DB_ID_COL_ << " = '" << o.fs[_KUL_DB_ID_COL_] << "'";
             db.exec(ss.str());
-            o.set(_KUL_DB_UPDATED_COL_, now);
             o.di.clear();
         }
         template <class T> 
@@ -167,12 +166,12 @@ class ORM{
             if(!w.empty()) ss << " WHERE " << w;
             ss << " LIMIT " << l << " OFFSET " << o;
             if(!g.empty()) ss << " GROUP BY " << g;
-            for(auto& t : ts) t.n = 0;
             std::vector<kul::hash::map::S2S> vals;
             populate(ss.str(), vals);
             for(const auto& v : vals){
                 T t;
                 for(const auto& m : v) t.fs.insert(m.first, m.second);
+                t.n = 0;
                 ts.push_back(t);
             }
         }
