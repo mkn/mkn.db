@@ -114,12 +114,10 @@ class ORM{
         template <class T> 
         void update(orm::AObject<T>& o){
             if(o.di.size() == 0) return;
-            std::time_t now = std::time(0);
-            o.set(_KUL_DB_UPDATED_COL_, now);
             std::stringstream ss;
             ss << "UPDATE " << table<T>() << " SET ";
             for(const auto& d : o.di) ss << d << "='" << o.fs[d] << "',";
-            ss << " updated = " << now;
+            ss << " updated = " << std::time(0);
             ss << " WHERE " << _KUL_DB_ID_COL_ << " = '" << o.fs[_KUL_DB_ID_COL_] << "'";
             db.exec(ss.str());
             o.di.clear();
