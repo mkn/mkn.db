@@ -35,30 +35,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "kul/threads.hpp"
 
-namespace kul{  namespace db{
+namespace kul { namespace db {
 
 class MySQL : public kul::DB{
-	private:
-		kul::Mutex m;
-		void exec(const std::string& sql) throw(db::Exception){
-			kul::ScopeLock l(m);
-		}
-	public:
-		~MySQL(){}
-		MySQL(const std::string& h, const std::string& d, const std::string& u, const std::string& p)
-			: kul::DB(d){}
+    private:
+        kul::Mutex m;
+        void exec(const std::string& sql) throw(db::Exception){
+            kul::ScopeLock l(m);
+        }
+    public:
+        ~MySQL(){}
+        MySQL(const std::string& h, const std::string& d, const std::string& u, const std::string& p)
+            : kul::DB(d){}
 
 };
 
 class MySQLORM : public kul::ORM{
-	private:
-		MySQL& mdb;
-	protected:
-	    virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals){
+    private:
+        MySQL& mdb;
+    protected:
+        virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals){
 
-	    }
-	public:
-		MySQLORM(MySQL& mdb) : kul::ORM(mdb), mdb(mdb){}
+        }
+    public:
+        MySQLORM(MySQL& mdb) : kul::ORM(mdb), mdb(mdb){}
 };
 
 }}
