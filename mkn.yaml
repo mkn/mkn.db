@@ -14,7 +14,7 @@ profile:
   - name: postgres
     parent: build
     dep:
-      - name: db.sql.pqxx
+      - name: db.pqxx
         version: master
 
   # - name: mysql
