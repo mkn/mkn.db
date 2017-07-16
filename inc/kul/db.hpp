@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 
 #include "kul/map.hpp"
+#include "kul/time.hpp"
 #include "kul/except.hpp"
 
 #include "kul/db/def.hpp"
@@ -55,8 +56,8 @@ class DB{
         DB(const std::string& n = "") : n(n){}
         friend class kul::ORM;
     public:
-        virtual std::string exec_return(const std::string& sql) throw(db::Exception) = 0;
-        virtual void exec(const std::string& s) throw(db::Exception) = 0;
+        virtual std::string exec_return(const std::string& sql) KTHROW(db::Exception) = 0;
+        virtual void exec(const std::string& s) KTHROW(db::Exception) = 0;
 };
 
 namespace orm{
@@ -174,7 +175,7 @@ class ORM{
             }
         }
         template <class T, class V = std::string> 
-        T by(const std::string& c, const V& v) throw(db::Exception) {
+        T by(const std::string& c, const V& v) KTHROW(db::Exception) {
             std::vector<T> ts;
             std::stringstream ss, id;
             id << v;
@@ -185,7 +186,7 @@ class ORM{
             return ts[0];
         }
         template <class T> 
-        T id(const _KUL_DB_ID_TYPE_& id) throw(db::Exception) {
+        T id(const _KUL_DB_ID_TYPE_& id) KTHROW(db::Exception) {
             return by<T, _KUL_DB_ID_TYPE_>(_KUL_DB_ID_COL_, id);
         }
 };

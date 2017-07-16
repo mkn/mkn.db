@@ -20,7 +20,7 @@ profile:
   # - name: mysql
   #   parent: build
   #   dep:
-  #     - name: db.sql.mysql
+  #     - name: db.mysql
   #       version: master
 
   - name: test

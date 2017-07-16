@@ -40,7 +40,7 @@ namespace kul { namespace db {
 class MySQL : public kul::DB{
     private:
         kul::Mutex m;
-        void exec(const std::string& sql) throw(db::Exception){
+        void exec(const std::string& sql) KTHROW(db::Exception){
             kul::ScopeLock l(m);
         }
     public:
