@@ -37,52 +37,56 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "kul/threads.hpp"
 
-namespace kul { namespace db {
+namespace kul {
+namespace db {
 
-class Postgres : public kul::DB{
-    private:
-        kul::Mutex m;
-        pqxx::connection c;
-        std::string exec_return(const std::string& sql) KTHROW(db::Exception){
-            kul::ScopeLock l(m);
-            pqxx::work w(c);
-            pqxx::result r = w.exec(sql);
-            w.commit();
-            return r[0][0].as<std::string>();
-        }
-        void exec(const std::string& sql) KTHROW(db::Exception){
-            kul::ScopeLock l(m);
-            pqxx::work w(c);
-            w.exec(sql);
-            w.commit();
-        }
-    public:
-        ~Postgres(){ c.disconnect(); }
-        Postgres(const std::string& h, const std::string& d, const std::string& s, const std::string& u, const std::string& p)
-            : kul::DB(s), c("host="+h+ " dbname="+d+" user="+u+" password="+p){}
-        pqxx::result query(const std::string& sql){
-            kul::ScopeLock l(m);
-            return pqxx::nontransaction(c).exec(sql);
-        }
+class Postgres : public kul::DB {
+ private:
+  kul::Mutex m;
+  pqxx::connection c;
+  std::string exec_return(const std::string& sql) KTHROW(db::Exception) {
+    kul::ScopeLock l(m);
+    pqxx::work w(c);
+    pqxx::result r = w.exec(sql);
+    w.commit();
+    return r[0][0].as<std::string>();
+  }
+  void exec(const std::string& sql) KTHROW(db::Exception) {
+    kul::ScopeLock l(m);
+    pqxx::work w(c);
+    w.exec(sql);
+    w.commit();
+  }
+
+ public:
+  Postgres(const std::string& h, const std::string& d, const std::string& s, const std::string& u,
+           const std::string& p)
+      : kul::DB(s), c("host=" + h + " dbname=" + d + " user=" + u + " password=" + p) {}
+  pqxx::result query(const std::string& sql) {
+    kul::ScopeLock l(m);
+    return pqxx::nontransaction(c).exec(sql);
+  }
 };
 
-class PostgresORM : public kul::ORM{
-    private:
-        Postgres& pdb;
-    protected:
-        virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals){
-            pqxx::result r(pdb.query(s));
-            for(pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c){
-                kul::hash::map::S2S map;
-                for(uint16_t i = 0; i < c.size(); i++) 
-                    map.insert(c[i].name(), c[i].is_null() ? "" : c[i].as<std::string>());
-                vals.push_back(map);
-            }
-        }
-    public:
-        PostgresORM(Postgres& pdb) : kul::ORM(pdb), pdb(pdb){}
-};
+class PostgresORM : public kul::ORM {
+ private:
+  Postgres& pdb;
 
-}}
+ protected:
+  virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals) {
+    pqxx::result r(pdb.query(s));
+    for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {
+      kul::hash::map::S2S map;
+      for (uint16_t i = 0; i < c.size(); i++)
+        map.insert(c[i].name(), c[i].is_null() ? "" : c[i].as<std::string>());
+      vals.push_back(map);
+    }
+  }
+
+ public:
+  PostgresORM(Postgres& pdb) : kul::ORM(pdb), pdb(pdb) {}
+};
+}
+}
 
 #endif /* _KUL_DBS_POSTGRES_HPP_ */

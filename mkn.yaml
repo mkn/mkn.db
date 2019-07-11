@@ -5,26 +5,34 @@ name: mkn.db
 parent: build
 
 profile:
-  - name: build
-    inc: ./inc
-    dep:
-      - name: mkn.kul
-        version: master
+- name: build
+  inc: ./inc
+  dep:
+    - name: mkn.kul
+      version: master
 
-  - name: postgres
-    parent: build
-    dep:
-      - name: db.pqxx
-        version: master
+- name: postgres
+  parent: build
+  dep:
+    - name: db.pqxx
+      version: master
 
-  # - name: mysql
-  #   parent: build
-  #   dep:
-  #     - name: db.mysql
-  #       version: master
+# - name: mysql
+#   parent: build
+#   dep:
+#     - name: db.mysql
+#       version: master
 
-  - name: test
-    parent: build
-    mode: none
-    self: postgres #mysql
-    main: test.cpp
+- name: test
+  parent: build
+  mode: none
+  self: postgres #mysql
+  main: test.cpp
+
+- name: format
+  mod:
+  - name: clang.format
+    init:
+      style: file
+      types: cpp:cxx:cc:h:hpp
+      paths: .

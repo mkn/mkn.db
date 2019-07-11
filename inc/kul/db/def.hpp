@@ -28,24 +28,23 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef   _KUL_DB_DEF_HPP_
-#define   _KUL_DB_DEF_HPP_
+#ifndef _KUL_DB_DEF_HPP_
+#define _KUL_DB_DEF_HPP_
 
-#ifndef   _KUL_DB_ID_COL_
-#define   _KUL_DB_ID_COL_ "id"
+#ifndef _KUL_DB_ID_COL_
+#define _KUL_DB_ID_COL_ "id"
 #endif /* _KUL_DB_ID_COL_ */
 
-#ifndef   _KUL_DB_ID_TYPE_
-#define   _KUL_DB_ID_TYPE_ uint32_t
+#ifndef _KUL_DB_ID_TYPE_
+#define _KUL_DB_ID_TYPE_ uint32_t
 #endif /* _KUL_DB_ID_TYPE_ */
 
-#ifndef   _KUL_DB_CREATED_COL_
-#define   _KUL_DB_CREATED_COL_ "created"
+#ifndef _KUL_DB_CREATED_COL_
+#define _KUL_DB_CREATED_COL_ "created"
 #endif /* _KUL_DB_CREATED_COL_ */
 
-#ifndef   _KUL_DB_UPDATED_COL_
-#define   _KUL_DB_UPDATED_COL_ "updated"
+#ifndef _KUL_DB_UPDATED_COL_
+#define _KUL_DB_UPDATED_COL_ "updated"
 #endif /* _KUL_DB_UPDATED_COL_ */
-
 
 #endif /* _KUL_DB_DEF_HPP_ */

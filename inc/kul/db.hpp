@@ -31,171 +31,182 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _KUL_DB_HPP_
 #define _KUL_DB_HPP_
 
-#include <vector>
 #include <sstream>
+#include <vector>
 
+#include "kul/except.hpp"
 #include "kul/map.hpp"
 #include "kul/time.hpp"
-#include "kul/except.hpp"
-
 #include "kul/db/def.hpp"
 
-namespace kul{
-namespace db{
-class Exception : public kul::Exception{
-    public:
-        Exception(const char*f, const uint16_t& l, std::string s) : kul::Exception(f, l, s){}
+namespace kul {
+namespace db {
+class Exception : public kul::Exception {
+ public:
+  Exception(const char* f, const uint16_t& l, std::string s) : kul::Exception(f, l, s) {}
 };
 }
 
 class ORM;
 
-class DB{
-    protected:
-        const std::string n;
-        DB(const std::string& n = "") : n(n){}
-        friend class kul::ORM;
-    public:
-        virtual std::string exec_return(const std::string& sql) KTHROW(db::Exception) = 0;
-        virtual void exec(const std::string& s) KTHROW(db::Exception) = 0;
+class DB {
+ protected:
+  const std::string n;
+  DB(const std::string& n = "") : n(n) {}
+  friend class kul::ORM;
+
+ public:
+  virtual ~DB(){}
+  virtual std::string exec_return(const std::string& sql) KTHROW(db::Exception) = 0;
+  virtual void exec(const std::string& s) KTHROW(db::Exception) = 0;
 };
 
-namespace orm{
+namespace orm {
 
 template <class T>
-class AObject{
-    private:
-        bool n = 1;
-        kul::hash::set::String di;
-        kul::hash::map::S2S fs;
-        template <class R> friend std::ostream& operator<<(std::ostream&, const AObject<R>&);
-    protected:
-        const std::string& field(const std::string& s) const{
-            if(!fs.count(s)) KEXCEPTION("ORM error, no field: " + s);
-            return (*fs.find(s)).second;
-        }
-        template<class R> 
-        const R field(const std::string& s) const{
-            std::stringstream ss(field(s));
-            R r;
-            ss >> r;
-            return r;
-        }
-    public:
-        const std::string& created() const { return (*fs.find(_KUL_DB_CREATED_COL_)).second; }
-        const std::string& updated() const { return (*fs.find(_KUL_DB_UPDATED_COL_)).second; }
-        template<class V = std::string> 
-        AObject<T>& set(const std::string& s, const V& v){
-            std::stringstream ss;
-            ss << v;
-            fs[s] = ss.str();
-            di.insert(s);
-            return *this;
-        }
-        const std::string& operator[](const std::string& s) const{
-            return field(s);
-        }
-        template<class R> 
-        R get(const std::string& s) const{
-            return this->template field<R>(s);
-        }
-        friend class kul::ORM;
-};
-template <class T> std::ostream& operator<<(std::ostream &s, const kul::orm::AObject<T>& o);
-}
+class AObject {
+ private:
+  bool n = 1;
+  kul::hash::set::String di;
+  kul::hash::map::S2S fs;
+  template <class R>
+  friend std::ostream& operator<<(std::ostream&, const AObject<R>&);
 
-class ORM{
-    protected:
-        DB& db;
-        virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals) = 0;
-        template <class T> 
-        std::string table(){
-            return db.n.size() ? (db.n+"."+T::TABLE()) : T::TABLE();
-        }
-        template <class T> 
-        void update(orm::AObject<T>& o){
-            if(o.di.size() == 0) return;
-            std::stringstream ss;
-            ss << "UPDATE " << table<T>() << " SET ";
-            for(const auto& d : o.di) ss << d << "='" << o.fs[d] << "',";
-            ss << " updated = " << std::time(0);
-            ss << " WHERE " << _KUL_DB_ID_COL_ << " = '" << o.fs[_KUL_DB_ID_COL_] << "'";
-            db.exec(ss.str());
-            o.di.clear();
-        }
-        template <class T> 
-        void insert(orm::AObject<T>& o){
-            std::time_t now = std::time(0);
-            std::string nsw = std::to_string(now);
-            std::stringstream ss;
-            ss << "INSERT INTO " << table<T>() << "(";
-            for(const auto& p : o.fs) ss << p.first << ", ";
-            ss << _KUL_DB_CREATED_COL_ << " ," << _KUL_DB_UPDATED_COL_ << ") VALUES(";
-            for(const auto& p : o.fs) ss << "'" << p.second << "', ";
-            ss << now << ", " << now << ") RETURNING " << _KUL_DB_ID_COL_;
-            o.fs.insert(_KUL_DB_ID_COL_     , db.exec_return(ss.str()));
-            o.fs.insert(_KUL_DB_CREATED_COL_, nsw);
-            o.fs.insert(_KUL_DB_UPDATED_COL_, nsw);
-            o.n = 0;
-            o.di.clear();
-        }
-    public:
-        ORM(DB& db) : db(db){}
-        template <class T> 
-        void commit(orm::AObject<T>& o){
-            if(o.n) insert(o);
-            else    update(o);
-        }
-        template <class T> 
-        void remove(const orm::AObject<T>& o){
-            std::stringstream ss;
-            ss << "DELETE FROM " << table<T>() << " t WHERE t." << _KUL_DB_ID_COL_ << " = '" << o[_KUL_DB_ID_COL_] << "'";
-            db.exec(ss.str());
-        }
-        template <class T> 
-        void remove(const std::string& w){
-            std::stringstream ss;
-            ss << "DELETE FROM " << table<T>() << " t WHERE t." << w;
-            db.exec(ss.str());
-        }
-        template <class T> 
-        void get(std::vector<T>& ts, const std::string& w = "", const uint16_t& l = 100, const uint16_t& o = 0, const std::string& g = ""){
-            std::stringstream ss;
-            ss << "SELECT * FROM " << table<T>() << " t ";
-            if(!w.empty()) ss << " WHERE " << w;
-            ss << " LIMIT " << l << " OFFSET " << o;
-            if(!g.empty()) ss << " GROUP BY " << g;
-            std::vector<kul::hash::map::S2S> vals;
-            populate(ss.str(), vals);
-            for(const auto& v : vals){
-                T t;
-                for(const auto& m : v) t.fs.insert(m.first, m.second);
-                t.n = 0;
-                ts.push_back(t);
-            }
-        }
-        template <class T, class V = std::string> 
-        T by(const std::string& c, const V& v) KTHROW(db::Exception) {
-            std::vector<T> ts;
-            std::stringstream ss, id;
-            id << v;
-            ss << "t." << c << " = '" << v << "'";
-            get(ts, ss.str(), 2, 0);
-            if(ts.size() == 0) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+ id.str() +" does not exist");
-            if(ts.size() >  1) KEXCEPT(db::Exception, "Table("+table<T>()+") : "+ _KUL_DB_ID_COL_ +":"+ id.str() +" is a duplicate");
-            return ts[0];
-        }
-        template <class T> 
-        T id(const _KUL_DB_ID_TYPE_& id) KTHROW(db::Exception) {
-            return by<T, _KUL_DB_ID_TYPE_>(_KUL_DB_ID_COL_, id);
-        }
-};
+ protected:
+  const std::string& field(const std::string& s) const {
+    if (!fs.count(s)) KEXCEPTION("ORM error, no field: " + s);
+    return (*fs.find(s)).second;
+  }
+  template <class R>
+  const R field(const std::string& s) const {
+    std::stringstream ss(field(s));
+    R r;
+    ss >> r;
+    return r;
+  }
 
-}
-template <class T> std::ostream& kul::orm::operator<<(std::ostream &s, const kul::orm::AObject<T>& o){
+ public:
+  const std::string& created() const { return (*fs.find(_KUL_DB_CREATED_COL_)).second; }
+  const std::string& updated() const { return (*fs.find(_KUL_DB_UPDATED_COL_)).second; }
+  template <class V = std::string>
+  AObject<T>& set(const std::string& s, const V& v) {
     std::stringstream ss;
-    for(const auto& p : o.fs)
-        ss << p.first << " : " << p.second << std::endl;
-    return s << ss.str();
+    ss << v;
+    fs[s] = ss.str();
+    di.insert(s);
+    return *this;
+  }
+  const std::string& operator[](const std::string& s) const { return field(s); }
+  template <class R>
+  R get(const std::string& s) const {
+    return this->template field<R>(s);
+  }
+  friend class kul::ORM;
+};
+template <class T>
+std::ostream& operator<<(std::ostream& s, const kul::orm::AObject<T>& o);
+}
+
+class ORM {
+ protected:
+  DB& db;
+  virtual void populate(const std::string& s, std::vector<kul::hash::map::S2S>& vals) = 0;
+  template <class T>
+  std::string table() {
+    return db.n.size() ? (db.n + "." + T::TABLE()) : T::TABLE();
+  }
+  template <class T>
+  void update(orm::AObject<T>& o) {
+    if (o.di.size() == 0) return;
+    std::stringstream ss;
+    ss << "UPDATE " << table<T>() << " SET ";
+    for (const auto& d : o.di) ss << d << "='" << o.fs[d] << "',";
+    ss << " updated = " << std::time(0);
+    ss << " WHERE " << _KUL_DB_ID_COL_ << " = '" << o.fs[_KUL_DB_ID_COL_] << "'";
+    db.exec(ss.str());
+    o.di.clear();
+  }
+  template <class T>
+  void insert(orm::AObject<T>& o) {
+    std::time_t now = std::time(0);
+    std::string nsw = std::to_string(now);
+    std::stringstream ss;
+    ss << "INSERT INTO " << table<T>() << "(";
+    for (const auto& p : o.fs) ss << p.first << ", ";
+    ss << _KUL_DB_CREATED_COL_ << " ," << _KUL_DB_UPDATED_COL_ << ") VALUES(";
+    for (const auto& p : o.fs) ss << "'" << p.second << "', ";
+    ss << now << ", " << now << ") RETURNING " << _KUL_DB_ID_COL_;
+    o.fs.insert(_KUL_DB_ID_COL_, db.exec_return(ss.str()));
+    o.fs.insert(_KUL_DB_CREATED_COL_, nsw);
+    o.fs.insert(_KUL_DB_UPDATED_COL_, nsw);
+    o.n = 0;
+    o.di.clear();
+  }
+
+ public:
+  ORM(DB& db) : db(db) {}
+  template <class T>
+  void commit(orm::AObject<T>& o) {
+    if (o.n)
+      insert(o);
+    else
+      update(o);
+  }
+  template <class T>
+  void remove(const orm::AObject<T>& o) {
+    std::stringstream ss;
+    ss << "DELETE FROM " << table<T>() << " t WHERE t." << _KUL_DB_ID_COL_ << " = '"
+       << o[_KUL_DB_ID_COL_] << "'";
+    db.exec(ss.str());
+  }
+  template <class T>
+  void remove(const std::string& w) {
+    std::stringstream ss;
+    ss << "DELETE FROM " << table<T>() << " t WHERE t." << w;
+    db.exec(ss.str());
+  }
+  template <class T>
+  void get(std::vector<T>& ts, const std::string& w = "", const uint16_t& l = 100,
+           const uint16_t& o = 0, const std::string& g = "") {
+    std::stringstream ss;
+    ss << "SELECT * FROM " << table<T>() << " t ";
+    if (!w.empty()) ss << " WHERE " << w;
+    ss << " LIMIT " << l << " OFFSET " << o;
+    if (!g.empty()) ss << " GROUP BY " << g;
+    std::vector<kul::hash::map::S2S> vals;
+    populate(ss.str(), vals);
+    for (const auto& v : vals) {
+      T t;
+      for (const auto& m : v) t.fs.insert(m.first, m.second);
+      t.n = 0;
+      ts.push_back(t);
+    }
+  }
+  template <class T, class V = std::string>
+  T by(const std::string& c, const V& v) KTHROW(db::Exception) {
+    std::vector<T> ts;
+    std::stringstream ss, id;
+    id << v;
+    ss << "t." << c << " = '" << v << "'";
+    get(ts, ss.str(), 2, 0);
+    if (ts.size() == 0)
+      KEXCEPT(db::Exception, "Table(" + table<T>() + ") : " + _KUL_DB_ID_COL_ + ":" + id.str() +
+                                 " does not exist");
+    if (ts.size() > 1)
+      KEXCEPT(db::Exception, "Table(" + table<T>() + ") : " + _KUL_DB_ID_COL_ + ":" + id.str() +
+                                 " is a duplicate");
+    return ts[0];
+  }
+  template <class T>
+  T id(const _KUL_DB_ID_TYPE_& id) KTHROW(db::Exception) {
+    return by<T, _KUL_DB_ID_TYPE_>(_KUL_DB_ID_COL_, id);
+  }
+};
+}
+template <class T>
+std::ostream& kul::orm::operator<<(std::ostream& s, const kul::orm::AObject<T>& o) {
+  std::stringstream ss;
+  for (const auto& p : o.fs) ss << p.first << " : " << p.second << std::endl;
+  return s << ss.str();
 }
 #endif /* _KUL_DB_HPP_ */
