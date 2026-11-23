@@ -1,6 +1,10 @@
 
 
 name: mkn.db
+property:
+  # dependency versions: master on master, latest on latest (a bare dep is the default branch)
+  clang.format.version: master
+  mkn.kul.version: master
 
 parent: build
 
@@ -9,7 +13,7 @@ profile:
   inc: ./inc
   dep:
     - name: mkn.kul
-      version: master
+      version: ${mkn.kul.version}
 
 - name: postgres
   parent: build
@@ -32,6 +36,7 @@ profile:
 - name: format
   mod:
   - name: clang.format
+    version: ${clang.format.version}
     init:
       style: file
       types: cpp:cxx:cc:h:hpp
